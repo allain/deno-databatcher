@@ -13,7 +13,6 @@ type DataBatcherOptions = {
   cacheKeyFn?: (any) => string | number;
   maxBatchSize?: number;
 };
-type LoadCache = { [key: string]: any };
 type BatchOp = {
   key: any;
   value?: any;
@@ -25,12 +24,12 @@ type BatchQueue = BatchOp[];
 
 export class DataBatcher {
   private batchLoadFn: BatchLoadFn;
-  private batchSaveFn: BatchSaveFn;
+  private batchSaveFn?: BatchSaveFn;
   private options: DataBatcherOptions;
 
   private flushing: boolean;
   private queue: BatchQueue;
-  private loadCache: LoadCache;
+  private loadCache: Map<any,Promise<any>>;
 
   constructor(
     batchLoadFn: BatchLoadFn,
@@ -41,12 +40,12 @@ export class DataBatcher {
     this.batchSaveFn = this.prepareBatchSaveFn(batchSaveFn, options);
     this.options = this.prepareOptions(batchSaveFn, options);
 
-    this.loadCache = {};
+    this.loadCache = new Map();
     this.flushing = false;
     this.queue = [];
   }
 
-  prepareBatchLoadFn(batchLoadFn) {
+  prepareBatchLoadFn(batchLoadFn: BatchLoadFn) {
     if (!isFunction(batchLoadFn)) {
       throw new TypeError(
         "DataBatcher must be constructed with a batch load function which accepts " +
@@ -57,7 +56,7 @@ export class DataBatcher {
     return batchLoadFn;
   }
 
-  prepareBatchSaveFn(batchSaveFn, options) {
+  prepareBatchSaveFn(batchSaveFn:BatchSaveFn|DataBatcherOptions, options?:DataBatcherOptions) : BatchSaveFn | null {
     // second param is options
     if (isUndefined(options) && isObject(batchSaveFn)) {
       return null;
@@ -70,64 +69,67 @@ export class DataBatcher {
       );
     }
 
+    // @ts-ignore
     return batchSaveFn;
   }
 
-  prepareOptions(batchSaveFn, options) {
+  prepareOptions(batchSaveFn:BatchSaveFn|DataBatcherOptions, options?: DataBatcherOptions) {
     if (isUndefined(options) && isObject(batchSaveFn)) {
+      // @ts-ignore
       options = batchSaveFn;
     }
 
     return options || {};
   }
 
-  loadMany(keys) {
+  loadMany(keys: any[]) {
     return Promise.all(keys.map(this.load.bind(this)));
   }
 
-  load(key) {
+  load(key:any) {
     const shouldCache = this.options.cache !== false;
     const cacheKeyFn = this.options.cacheKeyFn;
     const cacheKey = cacheKeyFn ? cacheKeyFn(key) : key;
 
     if (shouldCache) {
-      return (
-        this.loadCache[cacheKey] ||
-        (this.loadCache[cacheKey] = this._loadLater(key))
-      );
+      console.log(this.loadCache.get(cacheKey))
+
+      if (!this.loadCache.has(cacheKey)) {
+        this.loadCache.set(cacheKey, this._loadLater(key))
+      }
+
+      return this.loadCache.get(cacheKey);
     } else {
       return this._loadLater(key);
     }
   }
 
-  _loadLater(key) {
+  _loadLater(key:any) {
     return new Promise((resolve, reject) => {
       this.queue.push({ resolve, reject, key, type: "load" });
       if (this.queue.length === 1 && !this.flushing) {
-        // process.nextTick(this.flushQueue.bind(this))
         Promise.resolve().then(this.flushQueue.bind(this));
       }
     });
   }
 
-  saveMany(saves) {
+  saveMany(saves:Write[]) {
     return Promise.all(saves.map(([key, value]) => this.save(key, value)));
   }
 
-  save(key, value) {
+  save(key:any, value:any) {
     // clear item from load cache
     const cacheKeyFn = this.options.cacheKeyFn;
     const cacheKey = cacheKeyFn ? cacheKeyFn(key) : key;
-    delete this.loadCache[cacheKey];
+    this.loadCache.delete(cacheKey);
 
     return this._saveLater(key, value);
   }
 
-  _saveLater(key, value) {
+  _saveLater(key:any, value:any) {
     return new Promise((resolve, reject) => {
       this.queue.push({ resolve, reject, key, value, type: "save" });
       if (this.queue.length === 1 && !this.flushing) {
-        // process.nextTick(this.flushQueue.bind(this))
         Promise.resolve().then(this.flushQueue.bind(this));
       }
     });

@@ -1,6 +1,6 @@
 import { runTests, test } from "https://deno.land/std/testing/mod.ts";
 import { expect, it, mock } from "https://deno.land/x/expect@v0.2.0/mod.ts";
-import { DataBatcher, Write } from "./databatcher.ts";
+import { DataBatcher } from "./databatcher.ts";
 
 it("can be created", () => {
   const loader = async keys => keys;
@@ -22,6 +22,19 @@ it("uses batchLoader to loadMany", async () => {
   await batcher.loadMany([1, 2]);
   expect(loader).toHaveBeenCalledWith([1, 2]);
 });
+
+it('supports loading using any kind of key', async () => {
+  const loader = mock.fn(async keys => keys);
+  const batcher = new DataBatcher(loader);
+
+  const obj = {}
+
+  const loadA = batcher.load(obj);
+  const loadB = batcher.load(obj);
+  expect(loadA).toBe(loadB);
+  const loaded = await loadA
+  expect(loaded).toBe(obj)
+})
 
 it("is lazy with loads in same batch", async () => {
   const loader = mock.fn(async keys => keys);
@@ -116,7 +129,7 @@ it("handles returning errors in batchLoader as rejected promises", () => {
 
 it("handles returning errors in batchSaver as rejected promises", () => {
   const loader = async () => [];
-  const saver = async (writes: Write[]) => [new Error("TEST")];
+  const saver = async (writes: [any,any][]) => [new Error("TEST")];
   const batcher = new DataBatcher(loader, saver);
   expect(batcher.save(1, "BLAH")).rejects.toThrow("TEST");
 });
@@ -171,7 +184,7 @@ it("rejects if batchSaveFn returns non-Array", () => {
 
 it("rejects if batchSaveFn resolve to array with wrong length", () => {
   const loader = async keys => keys;
-  const saver = async (writes: Write[]) => [];
+  const saver = async (writes: [any,any][]) => [];
   const batcher = new DataBatcher(loader, saver);
   return expect(batcher.save(1, "test")).rejects.toThrow(
     "batchSaveFn must return Promise<Array<any>> of length 1 but got length: 0"
