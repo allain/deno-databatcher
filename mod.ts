@@ -1,1 +1,1 @@
-export { DataBatcher, Write } from "./databatcher.ts";
+export {DataBatcher} from "./databatcher.ts";

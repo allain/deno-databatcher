@@ -3,11 +3,10 @@ const isUndefined = x => typeof x === "undefined";
 const isDefined = x => typeof x !== "undefined";
 const isObject = x => typeof x === "object";
 
-export type BatchLoadFn = (keys: any[]) => Promise<any[]>;
-export type Write = [any, any];
-
+type BatchLoadFn = (keys: any[]) => Promise<any[]>;
+type Write = [any, any];
 type WriteResult = Error | void;
-export type BatchSaveFn = (write: [Write?]) => Promise<WriteResult[]>;
+type BatchSaveFn = (write: [Write?]) => Promise<WriteResult[]>;
 
 type DataBatcherOptions = {
   cache?: boolean;

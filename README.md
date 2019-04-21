@@ -1,11 +1,11 @@
 # DataBatcher
 
-The ideas of Facebook's DataLoader but applied to both loading and saving.
+The ideas of DataLoader but applied to both loading and saving.
 
 # Example Usage
 
 ```js
-import { DataBatcher, Write } from "./mod.ts";
+import { DataBatcher } from "./mod.ts";
 
 const example = { 1: "one", 3: "three" };
 
@@ -15,7 +15,7 @@ async function loadBatch(ids: [number]) {
   return ids.map(id => example[id] || null);
 }
 
-async function saveBatch(writes: Write[]) {
+async function saveBatch(writes: [any,any][]) {
   // do something super fancy to perform the writes in batch
   // Returning an Error if something goes wrong
   return writes.map(([key, value]) => {
