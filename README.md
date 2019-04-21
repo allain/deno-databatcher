@@ -25,10 +25,18 @@ async function saveBatch(writes: [any,any][]) {
 
 async function run() {
   const batcher = new DataBatcher(loadBatch, saveBatch);
-  console.log(await batcher.load(1)); // one
-  console.log(await batcher.load(2)); // null
-  console.log(await batcher.load(3)); // three
+
+  const loaded = await Promise.all([
+    batcher.load(1), // one
+    batcher.load(2), // null
+    batcher.load(3) // three
+  ]); 
+  console.log(loaded); // [ "one", null, "three" ] 
+
+  // Make change
   await batcher.save(2, "TWO");
+
+  // Load changed, note it is no longer null
   console.log(await batcher.load(2)); // TWO
 }
 
