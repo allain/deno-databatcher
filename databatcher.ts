@@ -6,7 +6,7 @@ const isObject = x => typeof x === "object";
 export type BatchLoadFn = (keys: any[]) => Promise<any[]>;
 export type Write = [any, any];
 
-type WriteResult = Error | void
+type WriteResult = Error | void;
 export type BatchSaveFn = (write: [Write?]) => Promise<WriteResult[]>;
 
 type DataBatcherOptions = {
