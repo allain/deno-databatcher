@@ -1,6 +1,5 @@
 import { runTests, test } from "https://deno.land/std/testing/mod.ts";
-// import { expect } from 'https://deno.land/x/expect@v0.1.0/expect.ts'
-import { expect, mock, it } from "../expect/mod.ts";
+import { expect, it, mock } from 'https://deno.land/x/expect@v0.2.0/mod.ts'
 import { DataBatcher, Write } from "./databatcher.ts";
 
 it("can be created", () => {
